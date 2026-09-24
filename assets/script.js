@@ -1048,22 +1048,212 @@ const petalsMat = new THREE.PointsMaterial({
 const petalsParticles = new THREE.Points(petalsGeo, petalsMat);
 scene.add(petalsParticles);
 
-const starCount = isMobile ? 450 : 900;
-const starGeo = new THREE.BufferGeometry();
-const starPos = new Float32Array(starCount * 3);
-for (let i = 0; i < starCount; i++) {
-  starPos[i * 3] = (Math.random() - 0.5) * 190;
-  starPos[i * 3 + 1] = Math.random() * 95;
-  starPos[i * 3 + 2] = (Math.random() - 0.5) * 190;
+// ============================================================================
+// HỆ THỐNG NGÔI SAO SÁNG LẤP LÁNH & SAO BĂNG TRÊN BẦU TRỜI ĐÊM (BRIGHT STARS)
+// ============================================================================
+
+// 1. Texture ngôi sao 4 cánh phát sáng lấp lánh (Sparkling Star Canvas)
+function createSparkleStarTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+
+  // Hào quang tỏa tròn
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, "rgba(255, 255, 255, 1.0)");
+  grad.addColorStop(0.18, "rgba(255, 245, 190, 0.9)");
+  grad.addColorStop(0.45, "rgba(255, 215, 110, 0.45)");
+  grad.addColorStop(0.8, "rgba(200, 160, 255, 0.12)");
+  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
+
+  // Tia sao 4 cánh lấp lánh (4-point Diamond Sparkle)
+  ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+  ctx.beginPath();
+  ctx.moveTo(32, 28);
+  ctx.lineTo(62, 32);
+  ctx.lineTo(32, 36);
+  ctx.lineTo(2, 32);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(28, 32);
+  ctx.lineTo(32, 2);
+  ctx.lineTo(36, 32);
+  ctx.lineTo(32, 62);
+  ctx.closePath();
+  ctx.fill();
+
+  return new THREE.CanvasTexture(canvas);
 }
-starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-const starMat = new THREE.PointsMaterial({
-  color: 0xffffff,
-  size: 0.42,
+
+const sparkleStarTex = createSparkleStarTexture();
+
+// 2. Tầng 1: Các Ngôi Sao Lớn Phát Sáng & Nhấp Nháy (Bright Sparkling Stars)
+const brightStarCount = isMobile ? 220 : 380;
+const brightStarGeo = new THREE.BufferGeometry();
+const brightStarPos = new Float32Array(brightStarCount * 3);
+const brightStarColors = new Float32Array(brightStarCount * 3);
+const brightStarBaseColors = [];
+const brightStarTwinkleData = [];
+
+const starPalettes = [
+  new THREE.Color(0xffffff), // Trắng kim cương
+  new THREE.Color(0xfff3b0), // Vàng kim tinh khôi
+  new THREE.Color(0xffd700), // Hoàng kim rực rỡ
+  new THREE.Color(0xffccd5), // Hồng ngọc mùa thu
+  new THREE.Color(0xcbe3fb), // Xanh băng dạ quang
+];
+
+for (let i = 0; i < brightStarCount; i++) {
+  // Phân bổ trên vòm trời cao 360 độ
+  const radius = 70 + Math.random() * 85;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(0.08 + Math.random() * 0.92);
+
+  const x = radius * Math.sin(phi) * Math.cos(theta);
+  const y = radius * Math.cos(phi) + 4;
+  const z = radius * Math.sin(phi) * Math.sin(theta);
+
+  brightStarPos[i * 3] = x;
+  brightStarPos[i * 3 + 1] = y;
+  brightStarPos[i * 3 + 2] = z;
+
+  const col = starPalettes[Math.floor(Math.random() * starPalettes.length)];
+  brightStarBaseColors.push(col.clone());
+
+  brightStarColors[i * 3] = col.r;
+  brightStarColors[i * 3 + 1] = col.g;
+  brightStarColors[i * 3 + 2] = col.b;
+
+  brightStarTwinkleData.push({
+    speed: 1.5 + Math.random() * 3.5,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+brightStarGeo.setAttribute("position", new THREE.BufferAttribute(brightStarPos, 3));
+brightStarGeo.setAttribute("color", new THREE.BufferAttribute(brightStarColors, 3));
+
+const brightStarMat = new THREE.PointsMaterial({
+  size: isMobile ? 1.45 : 1.85,
+  map: sparkleStarTex,
+  vertexColors: true,
   transparent: true,
-  opacity: 0.75,
+  opacity: 0.95,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
 });
-scene.add(new THREE.Points(starGeo, starMat));
+scene.add(new THREE.Points(brightStarGeo, brightStarMat));
+
+// 3. Tầng 2: Dải Ngân Hà Sao Nền Dày Đặc (Deep Cosmic Starfield)
+const deepStarCount = isMobile ? 1200 : 2400;
+const deepStarGeo = new THREE.BufferGeometry();
+const deepStarPos = new Float32Array(deepStarCount * 3);
+for (let i = 0; i < deepStarCount; i++) {
+  const r = 85 + Math.random() * 95;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(-0.2 + Math.random() * 1.2);
+
+  deepStarPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+  deepStarPos[i * 3 + 1] = r * Math.cos(phi) + 2;
+  deepStarPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+}
+deepStarGeo.setAttribute("position", new THREE.BufferAttribute(deepStarPos, 3));
+const deepStarMat = new THREE.PointsMaterial({
+  color: 0xfffaea,
+  size: isMobile ? 0.48 : 0.6,
+  transparent: true,
+  opacity: 0.85,
+});
+scene.add(new THREE.Points(deepStarGeo, deepStarMat));
+
+// 4. Tầng 3: Sao Băng Vụt Qua Bầu Trời Đêm (Shooting Stars)
+const shootingStars = [];
+let nextShootingStarTime = 2.5;
+
+function spawnShootingStar() {
+  const pCount = 16;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(pCount * 3);
+  const col = new Float32Array(pCount * 3);
+
+  const startX = (Math.random() - 0.5) * 80 + 15;
+  const startY = 32 + Math.random() * 18;
+  const startZ = -35 - Math.random() * 35;
+
+  const dir = new THREE.Vector3(-1.8, -0.9, 0.4).normalize();
+  const speed = 70 + Math.random() * 40;
+
+  for (let i = 0; i < pCount; i++) {
+    pos[i * 3] = startX;
+    pos[i * 3 + 1] = startY;
+    pos[i * 3 + 2] = startZ;
+
+    const alpha = 1.0 - (i / pCount);
+    col[i * 3] = 1.0 * alpha;
+    col[i * 3 + 1] = 0.95 * alpha;
+    col[i * 3 + 2] = 0.8 * alpha;
+  }
+
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+
+  const mat = new THREE.LineBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.9,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+
+  shootingStars.push({
+    line,
+    head: new THREE.Vector3(startX, startY, startZ),
+    dir,
+    speed,
+    life: 1.1,
+    pCount,
+  });
+}
+
+function updateShootingStars(delta, time) {
+  if (time > nextShootingStarTime) {
+    spawnShootingStar();
+    nextShootingStarTime = time + 4.0 + Math.random() * 4.5;
+  }
+
+  for (let i = shootingStars.length - 1; i >= 0; i--) {
+    const s = shootingStars[i];
+    s.life -= delta * 1.25;
+    s.head.addScaledVector(s.dir, s.speed * delta);
+
+    const pos = s.line.geometry.attributes.position.array;
+    for (let j = s.pCount - 1; j > 0; j--) {
+      pos[j * 3] = pos[(j - 1) * 3];
+      pos[j * 3 + 1] = pos[(j - 1) * 3 + 1];
+      pos[j * 3 + 2] = pos[(j - 1) * 3 + 2];
+    }
+    pos[0] = s.head.x;
+    pos[1] = s.head.y;
+    pos[2] = s.head.z;
+
+    s.line.geometry.attributes.position.needsUpdate = true;
+    s.line.material.opacity = Math.max(0, s.life);
+
+    if (s.life <= 0) {
+      scene.remove(s.line);
+      s.line.geometry.dispose();
+      s.line.material.dispose();
+      shootingStars.splice(i, 1);
+    }
+  }
+}
 
 // ============================================================================
 // HIỆU ỨNG PHÁO HOA KHI CHẠM VÀO ĐÈN
@@ -1330,10 +1520,28 @@ function formatWishText(text, name) {
   return res;
 }
 
-let targetCamPos = null;
-let targetCamTarget = null;
+let cameraTransition = null;
 let selectedLantern = null;
 let currentWishIndex = 0;
+
+function animateCameraTo(targetPosition, targetLookAt, duration = 800) {
+  cameraTransition = {
+    startTime: performance.now(),
+    duration: duration,
+    startPos: camera.position.clone(),
+    endPos: targetPosition.clone(),
+    startLook: controls.target.clone(),
+    endLook: targetLookAt.clone(),
+  };
+}
+
+function stopCameraTransition() {
+  cameraTransition = null;
+}
+
+// Bắt đầu thao tác xoay chuột hoặc ngón tay -> Hủy ngay mọi chuyển động tự động của Camera để người dùng quay tự do 360 độ
+controls.addEventListener("start", stopCameraTransition);
+window.addEventListener("pointerdown", stopCameraTransition, { passive: true });
 
 const wishModal = document.getElementById("wishModal");
 const wishTitle = document.getElementById("wishTitle");
@@ -1377,6 +1585,7 @@ function onPointerUp(event) {
   if (
     event.target.closest(".top-bar") ||
     event.target.closest(".wish-modal") ||
+    event.target.closest(".welcome-modal") ||
     event.target.closest(".audio-hint-toast")
   ) {
     return;
@@ -1414,8 +1623,10 @@ function onPointerUp(event) {
       .subVectors(camera.position, lPos)
       .normalize()
       .multiplyScalar(6.0);
-    targetCamPos = new THREE.Vector3().addVectors(lPos, offset);
-    targetCamTarget = lPos.clone();
+    const targetPos = new THREE.Vector3().addVectors(lPos, offset);
+    const targetLook = lPos.clone();
+
+    animateCameraTo(targetPos, targetLook, 800);
 
     const lanternId = selectedLantern.userData.id;
     displayWishAtIndex(lanternId % wishList.length);
@@ -1430,8 +1641,7 @@ window.addEventListener("pointerdown", onPointerDown, { passive: true });
 window.addEventListener("pointerup", onPointerUp, { passive: true });
 
 function resetCamera() {
-  targetCamPos = DEFAULT_CAM_POS.clone();
-  targetCamTarget = DEFAULT_CAM_TARGET.clone();
+  animateCameraTo(DEFAULT_CAM_POS, DEFAULT_CAM_TARGET, 800);
   selectedLantern = null;
 }
 
@@ -1445,7 +1655,6 @@ function closeWishCard(e) {
     e.preventDefault();
   }
   wishModal.classList.remove("active");
-  resetCamera();
 }
 
 closeWishBtn.addEventListener("click", closeWishCard);
@@ -1570,16 +1779,36 @@ function animate() {
   // 7. Thỏ ngọc nhảy quanh đảo
   updateRabbits(time);
 
-  // 8. Chuyển động mượt mà của Camera khi chọn lồng đèn
-  if (targetCamPos && targetCamTarget) {
-    camera.position.lerp(targetCamPos, 0.045);
-    controls.target.lerp(targetCamTarget, 0.045);
+  // 8. Chuyển động mượt mà của Camera khi chọn lồng đèn hoặc đổi góc nhìn (Tự động kết thúc sau duration, không kéo ngược camera khi người dùng xoay)
+  if (cameraTransition) {
+    const elapsed = performance.now() - cameraTransition.startTime;
+    const p = Math.min(1.0, elapsed / cameraTransition.duration);
+    const ease = 1 - Math.pow(1 - p, 3);
 
-    if (camera.position.distanceTo(targetCamPos) < 0.1) {
-      targetCamPos = null;
-      targetCamTarget = null;
+    camera.position.lerpVectors(cameraTransition.startPos, cameraTransition.endPos, ease);
+    controls.target.lerpVectors(cameraTransition.startLook, cameraTransition.endLook, ease);
+
+    if (p >= 1.0) {
+      cameraTransition = null;
     }
   }
+
+  // 9. Cập nhật ánh sáng lấp lánh lung linh của các vì sao lớn
+  if (brightStarGeo) {
+    const colArr = brightStarGeo.attributes.color.array;
+    for (let i = 0; i < brightStarCount; i++) {
+      const td = brightStarTwinkleData[i];
+      const brightness = 0.5 + 0.5 * Math.sin(time * td.speed + td.phase);
+      const base = brightStarBaseColors[i];
+      colArr[i * 3] = base.r * brightness;
+      colArr[i * 3 + 1] = base.g * brightness;
+      colArr[i * 3 + 2] = base.b * brightness;
+    }
+    brightStarGeo.attributes.color.needsUpdate = true;
+  }
+
+  // 10. Cập nhật sao băng vụt qua trời đêm
+  updateShootingStars(delta, time);
 
   controls.update();
   renderer.render(scene, camera);
