@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trung Thu - Đêm Trăng Đoàn Viên & Lời Chúc Gửi Người Thương</title>
+    <meta name="description"
+        content="Khám phá không gian Tết Trung Thu 3D lung linh với trăng rằm rực rỡ, lồng đèn hoa đăng huyền ảo và những lời chúc ý nghĩa gửi trao.">
+
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&family=Great+Vibes&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./assets/css.css">
+</head>
+
+<body>
+
+    <div id="webgl-container"></div>
+
+    <!-- Dialog nhập tên nghệ thuật trước khi vào app -->
+    <div class="welcome-modal active" id="welcomeModal" role="dialog" aria-modal="true">
+        <div class="welcome-card">
+            <div class="welcome-lantern-decor">🏮</div>
+            <div class="welcome-tag">✦ ĐÊM HỘI TRĂNG RẰM ✦</div>
+            <h2 class="welcome-title">Gửi Trao Yêu Thương</h2>
+            <p class="welcome-desc">
+                Nhập tên của bạn hoặc người thương để nhận những lời chúc ngọt ngào và trọn vẹn nhất dưới ánh trăng rằm:
+            </p>
+
+            <form id="welcomeForm" onsubmit="return false;">
+                <div class="input-wrapper">
+                    <i class="fas fa-heart input-icon"></i>
+                    <input type="text" id="userNameInput" placeholder="Ví dụ: Thanh Loan, Em Yêu..." maxlength="30"
+                        autofocus autocomplete="off">
+                </div>
+                <div class="welcome-actions">
+                    <button type="submit" class="welcome-btn" id="startAppBtn">
+                        <i class="fas fa-wand-magic-sparkles"></i> Khám Phá Đêm Trăng
+                    </button>
+                    <button type="button" class="skip-btn" id="skipNameBtn">
+                        Để mặc định là "Cậu"
+                    </button>
+                </div>
+            </form>
+
+            <div class="welcome-footer">
+                <span>🏮 Rằm Tháng Tám • Nguyện Ước Đoàn Viên 🏮</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanh công cụ góc trên -->
+    <div class="top-bar">
+        <button class="icon-btn" id="name-btn" title="Đổi tên người nhận lời chúc">
+            <i class="fas fa-heart"></i>
+        </button>
+        <button class="icon-btn" id="audio-btn" title="Bật/Tắt Nhạc Trung Thu">
+            <i class="fas fa-music"></i>
+            <span class="music-wave" id="musicWave">
+                <span></span><span></span><span></span>
+            </span>
+        </button>
+        <button class="icon-btn" id="reset-cam-btn" title="Góc nhìn ban đầu">
+            <i class="fas fa-compress-arrows-alt"></i>
+        </button>
+    </div>
+
+    <!-- Hướng dẫn tương tác -->
+    <div class="click-hint" id="clickHint">
+        <span>🏮 Chạm vào lồng đèn để xem lời chúc & tranh Trung Thu lung linh 🏮</span>
+    </div>
+
+    <!-- Thông báo hướng dẫn bật âm thanh nếu trình duyệt cần tương tác đầu tiên -->
+    <div class="audio-hint-toast" id="audioHintToast">
+        <i class="fas fa-volume-up"></i> Chạm màn hình để bật nhạc du dương ✨
+    </div>
+
+    <!-- Modal hiển thị lời chúc & hình ảnh -->
+    <div class="wish-modal" id="wishModal" role="dialog" aria-modal="true">
+        <div class="wish-card">
+            <button class="close-btn" id="closeWishBtn" aria-label="Đóng"><i class="fas fa-times"></i></button>
+
+            <div class="wish-header">
+                <div class="wish-tag" id="wishTag">✦ Trung Thu An Lành ✦</div>
+                <h3 id="wishTitle">Thông Điệp Gửi Cậu</h3>
+            </div>
+
+            <div class="wish-image-container">
+                <img id="wishImage" src="./assets/4.png" alt="Hình ảnh Trung Thu Dễ Thương">
+                <span class="image-badge" id="imageBadge">✦ Rằm Tháng Tám ✦</span>
+            </div>
+
+            <p id="wishText">"Chúc cậu một đêm Trung Thu ấm áp, bình an và trọn vẹn bên những người thương yêu."</p>
+
+            <div class="wish-footer">
+                <span class="lunar-note">🏮 Tết Trung Thu • Vầng Trăng Yêu Thương 🏮</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nhạc nền Trung Thu -->
+    <audio id="bgm" loop preload="auto" src="./assets/1.mp3"></audio>
+
+    <!-- Three.js & OrbitControls -->
+    <script src="./assets/three.min.js"></script>
+    <script src="./assets/OrbitControls.js"></script>
+    <script src="./assets/textures_data.js"></script>
+    <script src="./assets/script.js"></script>
+</body>
+
+</html>
