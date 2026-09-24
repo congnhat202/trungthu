@@ -305,6 +305,116 @@ const treeGroup = new THREE.Group();
 treeGroup.position.set(0, 4.0, 0);
 islandGroup.add(treeGroup);
 
+// ============================================================================
+// ÁNH SÁNG NHỊP THỞ HUYỀN ẢO DƯỚI GỐC CÂY (MYSTICAL BREATHING LIGHT AT TREE BASE)
+// ============================================================================
+// 1. Nguồn sáng điểm phát ra từ lòng gốc cây (Màu hồng đào tiên cảnh & ánh vàng ấm)
+const treeBaseBreathingLight = new THREE.PointLight(0xff77a9, 3.2, 22);
+treeBaseBreathingLight.position.set(0, 0.45, 0);
+treeGroup.add(treeBaseBreathingLight);
+
+const treeWarmBreathingLight = new THREE.PointLight(0xffb84d, 2.2, 16);
+treeWarmBreathingLight.position.set(0, 0.25, 0);
+treeGroup.add(treeWarmBreathingLight);
+
+// 2. Vầng hào quang tỏa tròn trên mặt đất dưới gốc cây (Root Aura Disk)
+function createRootAuraTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, "rgba(255, 230, 180, 0.95)");
+  grad.addColorStop(0.25, "rgba(255, 140, 180, 0.75)");
+  grad.addColorStop(0.55, "rgba(230, 90, 160, 0.35)");
+  grad.addColorStop(0.85, "rgba(180, 60, 220, 0.12)");
+  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(canvas);
+}
+
+const rootAuraGeo = new THREE.PlaneGeometry(8.2, 8.2);
+const rootAuraMat = new THREE.MeshBasicMaterial({
+  map: createRootAuraTexture(),
+  transparent: true,
+  opacity: 0.85,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+const rootAuraMesh = new THREE.Mesh(rootAuraGeo, rootAuraMat);
+rootAuraMesh.rotation.x = -Math.PI / 2;
+rootAuraMesh.position.set(0, 0.05, 0);
+treeGroup.add(rootAuraMesh);
+
+// 3. Vòng tròn năng lượng lan tỏa nhịp thở (Outer breathing pulse wave)
+const rootAuraRingGeo = new THREE.RingGeometry(1.2, 4.8, 32);
+const rootAuraRingMat = new THREE.MeshBasicMaterial({
+  map: createRootAuraTexture(),
+  transparent: true,
+  opacity: 0.6,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+const rootAuraRing = new THREE.Mesh(rootAuraRingGeo, rootAuraRingMat);
+rootAuraRing.rotation.x = -Math.PI / 2;
+rootAuraRing.position.set(0, 0.08, 0);
+treeGroup.add(rootAuraRing);
+
+// 4. Đom đóm phát sáng bay lượn huyền ảo quanh gốc cây
+const fireflyCount = 28;
+const fireflyGeo = new THREE.BufferGeometry();
+const fireflyPositions = new Float32Array(fireflyCount * 3);
+const fireflyData = [];
+
+for (let i = 0; i < fireflyCount; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 0.8 + Math.random() * 3.2;
+  const y = 0.2 + Math.random() * 2.2;
+  fireflyPositions[i * 3] = Math.cos(angle) * radius;
+  fireflyPositions[i * 3 + 1] = y;
+  fireflyPositions[i * 3 + 2] = Math.sin(angle) * radius;
+
+  fireflyData.push({
+    baseAngle: angle,
+    radius: radius,
+    baseY: y,
+    speed: 0.4 + Math.random() * 0.8,
+    floatSpeed: 1.2 + Math.random() * 1.5,
+    pulseSpeed: 2.0 + Math.random() * 2.5,
+    pulsePhase: Math.random() * Math.PI * 2,
+  });
+}
+fireflyGeo.setAttribute("position", new THREE.BufferAttribute(fireflyPositions, 3));
+
+function createFireflyTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, "rgba(255, 255, 220, 1)");
+  grad.addColorStop(0.3, "rgba(255, 210, 100, 0.8)");
+  grad.addColorStop(0.7, "rgba(255, 120, 160, 0.3)");
+  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
+
+const fireflyMat = new THREE.PointsMaterial({
+  size: 0.55,
+  map: createFireflyTexture(),
+  transparent: true,
+  opacity: 0.9,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+});
+const fireflyParticles = new THREE.Points(fireflyGeo, fireflyMat);
+treeGroup.add(fireflyParticles);
+
 const trunkMat = new THREE.MeshStandardMaterial({
   color: 0x2b140e,
   roughness: 0.85,
@@ -1581,6 +1691,9 @@ function displayWishAtIndex(index) {
   }
 }
 
+let savedCamPos = null;
+let savedCamTarget = null;
+
 function onPointerUp(event) {
   if (
     event.target.closest(".top-bar") ||
@@ -1617,6 +1730,10 @@ function onPointerUp(event) {
     selectedLantern = hitMesh.userData.parentLantern || hitMesh.parent;
     const lPos = selectedLantern.position;
 
+    // Lưu lại vị trí góc nhìn của người dùng trước khi zoom vào đèn lồng
+    savedCamPos = camera.position.clone();
+    savedCamTarget = controls.target.clone();
+
     createFirework(lPos);
 
     const offset = new THREE.Vector3()
@@ -1643,6 +1760,8 @@ window.addEventListener("pointerup", onPointerUp, { passive: true });
 function resetCamera() {
   animateCameraTo(DEFAULT_CAM_POS, DEFAULT_CAM_TARGET, 800);
   selectedLantern = null;
+  savedCamPos = null;
+  savedCamTarget = null;
 }
 
 resetCamBtn.addEventListener("click", () => {
@@ -1655,6 +1774,15 @@ function closeWishCard(e) {
     e.preventDefault();
   }
   wishModal.classList.remove("active");
+
+  // Tự động lùi góc nhìn camera quay trở lại vị trí ngắm cảnh ban đầu một cách mượt mà
+  const backCamPos = savedCamPos ? savedCamPos.clone() : DEFAULT_CAM_POS.clone();
+  const backCamLook = savedCamTarget ? savedCamTarget.clone() : DEFAULT_CAM_TARGET.clone();
+  animateCameraTo(backCamPos, backCamLook, 850);
+
+  selectedLantern = null;
+  savedCamPos = null;
+  savedCamTarget = null;
 }
 
 closeWishBtn.addEventListener("click", closeWishCard);
@@ -1775,6 +1903,43 @@ function animate() {
 
   // 6. Đảo bay xoay nhẹ nhàng
   islandGroup.rotation.y = Math.sin(time * 0.15) * 0.05;
+
+  // 6.1. HIỆU ỨNG ÁNH SÁNG NHỊP THỞ DƯỚI GỐC CÂY (BREATHING LIGHT EFFECT)
+  const breath = Math.sin(time * 1.8) * 0.5 + 0.5; // Chu kỳ nhịp thở nhịp nhàng
+  const breathWave = Math.sin(time * 1.8 - 0.5) * 0.5 + 0.5;
+
+  if (treeBaseBreathingLight) {
+    treeBaseBreathingLight.intensity = 1.6 + breath * 2.8;
+  }
+  if (treeWarmBreathingLight) {
+    treeWarmBreathingLight.intensity = 1.0 + breath * 1.8;
+  }
+  if (rootAuraMesh) {
+    const s = 1.0 + breath * 0.22;
+    rootAuraMesh.scale.set(s, s, 1);
+    rootAuraMesh.material.opacity = 0.55 + breath * 0.38;
+  }
+  if (rootAuraRing) {
+    const sRing = 1.0 + breathWave * 0.32;
+    rootAuraRing.scale.set(sRing, sRing, 1);
+    rootAuraRing.material.opacity = 0.3 + breathWave * 0.45;
+  }
+
+  // Cập nhật vị trí & độ sáng đom đóm thần tiên quanh gốc cây
+  if (fireflyParticles) {
+    const ffPos = fireflyGeo.attributes.position.array;
+    for (let i = 0; i < fireflyCount; i++) {
+      const fd = fireflyData[i];
+      const curAngle = fd.baseAngle + time * fd.speed * 0.3;
+      const curRadius = fd.radius + Math.sin(time * fd.floatSpeed + i) * 0.25;
+      ffPos[i * 3] = Math.cos(curAngle) * curRadius;
+      ffPos[i * 3 + 1] = fd.baseY + Math.sin(time * fd.floatSpeed + i * 2) * 0.35;
+      ffPos[i * 3 + 2] = Math.sin(curAngle) * curRadius;
+    }
+    fireflyGeo.attributes.position.needsUpdate = true;
+    const ffPulse = Math.sin(time * 3.0) * 0.2 + 0.8;
+    fireflyMat.opacity = 0.75 + ffPulse * 0.25;
+  }
 
   // 7. Thỏ ngọc nhảy quanh đảo
   updateRabbits(time);
